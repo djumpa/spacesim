@@ -36,8 +36,7 @@ def handler(clientsocket, clientaddr):
     #clientsocket.close()
 
 def push():
-    while True:
-   
+    while True:      
         for i in clients:
             if i is not serversocket: # neposilat sam sobe
                 i.send(("Curent date and time: " + str(datetime.datetime.now()) + '\n').encode())
@@ -53,6 +52,6 @@ while True:
         clients.append(clientsocket)
         _thread.start_new_thread(handler, (clientsocket, clientaddr))
     except KeyboardInterrupt: # Ctrl+C # FIXME: vraci "raise error(EBADF, 'Bad file descriptor')"
-        break
         print("Closing server socket...")
         serversocket.close()
+        break
