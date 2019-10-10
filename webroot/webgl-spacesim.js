@@ -1,4 +1,8 @@
 var cubeRotation = 0.0;
+var NUM_LAT_SEGS = 32;
+var NUM_LON_SEGS = 32;
+
+var radius = 1.0;
 
 $(document).ready(function () {
     var resizing = false;
@@ -107,7 +111,7 @@ function main() {
     // objects we'll be drawing.
     const buffers = initBuffers(gl);
 
-    const texture = loadTexture(gl, 'cubetexture.png');
+    const texture = loadTexture(gl, 'earthday.jpg');
 
     var then = 0;
 
@@ -134,169 +138,61 @@ function initBuffers(gl) {
 
 
 
-    // Now create an array of positions for the cube.
 
-    const positions = [
-        // Front face
-        -1.0, -1.0, 1.0,
-        1.0, -1.0, 1.0,
-        1.0, 1.0, 1.0,
-        -1.0, 1.0, 1.0,
+    var positions = [];
+    var vertexNormals = [];
+    var textureCoordinates = [];
+    var i = 0;
+    for (var lat = 0; lat <= NUM_LAT_SEGS; lat++) { 
+      var latAngle = (Math.PI / NUM_LAT_SEGS) * lat - (Math.PI / 2);
+      var diskRadius = Math.cos(Math.abs(latAngle));
+      var z = Math.sin(latAngle);
+      //console.log('LAT: ' + latAngle * R2D + ' , Z: ' + z);
+      for(var lon = 0; lon <= NUM_LON_SEGS; lon++) { //add an extra vertex for texture funness
+        var lonAngle = (Math.PI * 2 / NUM_LON_SEGS) * lon;
+        var x = Math.cos(lonAngle) * diskRadius;
+        var y = Math.sin(lonAngle) * diskRadius;
+          //console.log('i: ' + i + '    LON: ' + lonAngle * R2D + ' X: ' + x + ' Y: ' + y)
+        
+        //mercator cylindrical projection (simple angle interpolation)
+        var v = 1-(lat / NUM_LAT_SEGS);
+        var u = 0.5 + (lon / NUM_LON_SEGS); //may need to change to move map
+        //console.log('u: ' + u + ' v: ' + v);
+        //normals: should just be a vector from center to point (aka the point itself!
+        
+        positions.push(x * radius);
+        positions.push(y * radius);
+        positions.push(z * radius);
+        textureCoordinates.push(u);
+        textureCoordinates.push(v);
+        vertexNormals.push(x);
+        vertexNormals.push(y);
+        vertexNormals.push(z);
+        
+        i++;
+      }
+    } 
 
-        // Back face
-        -1.0, -1.0, -1.0,
-        -1.0, 1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, -1.0, -1.0,
-
-        // Top face
-        -1.0, 1.0, -1.0,
-        -1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0,
-        1.0, 1.0, -1.0,
-
-        // Bottom face
-        -1.0, -1.0, -1.0,
-        1.0, -1.0, -1.0,
-        1.0, -1.0, 1.0,
-        -1.0, -1.0, 1.0,
-
-        // Right face
-        1.0, -1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, 1.0, 1.0,
-        1.0, -1.0, 1.0,
-
-        // Left face
-        -1.0, -1.0, -1.0,
-        -1.0, -1.0, 1.0,
-        -1.0, 1.0, 1.0,
-        -1.0, 1.0, -1.0,
-    ];
-
-    // Now pass the list of positions into WebGL to build the
-    // shape. We do this by creating a Float32Array from the
-    // JavaScript array, then use it to fill the current buffer.
-
-
-
-    // Set up the normals for the vertices, so that we can compute lighting.
-
-
-
-    const vertexNormals = [
-        // Front
-        0.0, 0.0, 1.0,
-        0.0, 0.0, 1.0,
-        0.0, 0.0, 1.0,
-        0.0, 0.0, 1.0,
-
-        // Back
-        0.0, 0.0, -1.0,
-        0.0, 0.0, -1.0,
-        0.0, 0.0, -1.0,
-        0.0, 0.0, -1.0,
-
-        // Top
-        0.0, 1.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 1.0, 0.0,
-
-        // Bottom
-        0.0, -1.0, 0.0,
-        0.0, -1.0, 0.0,
-        0.0, -1.0, 0.0,
-        0.0, -1.0, 0.0,
-
-        // Right
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-        1.0, 0.0, 0.0,
-
-        // Left
-        -1.0, 0.0, 0.0,
-        -1.0, 0.0, 0.0,
-        -1.0, 0.0, 0.0,
-        -1.0, 0.0, 0.0
-    ];
-
-
-
-    // Now set up the texture coordinates for the faces.
-
-
-
-    const textureCoordinates = [
-        // Front
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0,
-        // Back
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0,
-        // Top
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0,
-        // Bottom
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0,
-        // Right
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0,
-        // Left
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0,
-    ];
-
-    const faceColors = [
-        [1.0, 1.0, 1.0, 1.0],    // Front face: white
-        [1.0, 0.0, 0.0, 1.0],    // Back face: red
-        [0.0, 1.0, 0.0, 1.0],    // Top face: green
-        [0.0, 0.0, 1.0, 1.0],    // Bottom face: blue
-        [1.0, 1.0, 0.0, 1.0],    // Right face: yellow
-        [1.0, 0.0, 1.0, 1.0],    // Left face: purple
-    ];
-
-    // Convert the array of colors into a table for all the vertices.
-
-    var colors = [];
-
-    for (var j = 0; j < faceColors.length; ++j) {
-        const c = faceColors[j];
-
-        // Repeat each color four times for the four vertices of the face
-        colors = colors.concat(c, c, c, c);
+      //ok let's calculate vertex draw orders.... indiv triangles
+  var indices = [];
+  for(var lat=0; lat < NUM_LAT_SEGS; lat++) { //this is for each QUAD, not each vertex, so <
+    for(var lon=0; lon < NUM_LON_SEGS; lon++) {
+      var blVert = lat * (NUM_LON_SEGS+1) + lon; //there's NUM_LON_SEGS + 1 verts in each horizontal band
+      var brVert = blVert + 1;
+      var tlVert = (lat + 1) * (NUM_LON_SEGS+1) + lon; 
+      var trVert = tlVert + 1;
+  //    console.log('bl: ' + blVert + ' br: ' + brVert +  ' tl: ' + tlVert + ' tr: ' + trVert);
+      indices.push(blVert);
+      indices.push(brVert);
+      indices.push(tlVert);
+      
+      indices.push(tlVert);
+      indices.push(trVert);
+      indices.push(brVert);
     }
+  }
+  vertCount = indices.length;
 
-
-
-
-
-    // This array defines each face as two triangles, using the
-    // indices into the vertex array to specify each triangle's
-    // position.
-
-    const indices = [
-        0, 1, 2, 0, 2, 3,    // front
-        4, 5, 6, 4, 6, 7,    // back
-        8, 9, 10, 8, 10, 11,   // top
-        12, 13, 14, 12, 14, 15,   // bottom
-        16, 17, 18, 16, 18, 19,   // right
-        20, 21, 22, 20, 22, 23,   // left
-    ];
 
     // Now send the element array to GL
 
@@ -310,7 +206,7 @@ function initBuffers(gl) {
 
     const textureCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
 
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -321,6 +217,7 @@ function initBuffers(gl) {
         normal: normalBuffer,
         textureCoord: textureCoordBuffer,
         indices: indexBuffer,
+        vertCount: vertCount,
     };
 }
 
@@ -421,12 +318,15 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
 
     mat4.translate(modelViewMatrix,     // destination matrix
         modelViewMatrix,     // matrix to translate
-        [-0.0, 0.0, -6.0]);  // amount to translate
-
+        [-0.0, 0.0, -6.0]);  // amount to translate   
+        mat4.rotate(modelViewMatrix,  // destination matrix
+            modelViewMatrix,  // matrix to rotate
+            Math.PI/2,// amount to rotate in radians
+            [-1, 0, 0]);       // axis to rotate around (X)  
     mat4.rotate(modelViewMatrix,  // destination matrix
         modelViewMatrix,  // matrix to rotate
         cubeRotation * .7,// amount to rotate in radians
-        [0, 1, 0]);       // axis to rotate around (X)
+        [0, 0, 1]);       // axis to rotate around (X)
 
     const normalMatrix = mat4.create();
     mat4.invert(normalMatrix, modelViewMatrix);
@@ -526,7 +426,7 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
     gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
 
     {
-        const vertexCount = 36;
+        const vertexCount = buffers.vertCount;
         const type = gl.UNSIGNED_SHORT;
         const offset = 0;
         gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
