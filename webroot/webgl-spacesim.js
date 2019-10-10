@@ -64,7 +64,7 @@ function main() {
 
       highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
 
-      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
+      highp float directional = 3.0*max(dot(transformedNormal.xyz, directionalVector), 0.0);
       vLighting = ambientLight + (directionalLightColor * directional);
     }
   `;
@@ -135,63 +135,59 @@ function main() {
 // have one object -- a simple three-dimensional cube.
 //
 function initBuffers(gl) {
-
-
-
-
     var positions = [];
     var vertexNormals = [];
     var textureCoordinates = [];
     var i = 0;
-    for (var lat = 0; lat <= NUM_LAT_SEGS; lat++) { 
-      var latAngle = (Math.PI / NUM_LAT_SEGS) * lat - (Math.PI / 2);
-      var diskRadius = Math.cos(Math.abs(latAngle));
-      var z = Math.sin(latAngle);
-      //console.log('LAT: ' + latAngle * R2D + ' , Z: ' + z);
-      for(var lon = 0; lon <= NUM_LON_SEGS; lon++) { //add an extra vertex for texture funness
-        var lonAngle = (Math.PI * 2 / NUM_LON_SEGS) * lon;
-        var x = Math.cos(lonAngle) * diskRadius;
-        var y = Math.sin(lonAngle) * diskRadius;
-          //console.log('i: ' + i + '    LON: ' + lonAngle * R2D + ' X: ' + x + ' Y: ' + y)
-        
-        //mercator cylindrical projection (simple angle interpolation)
-        var v = 1-(lat / NUM_LAT_SEGS);
-        var u = 0.5 + (lon / NUM_LON_SEGS); //may need to change to move map
-        //console.log('u: ' + u + ' v: ' + v);
-        //normals: should just be a vector from center to point (aka the point itself!
-        
-        positions.push(x * radius);
-        positions.push(y * radius);
-        positions.push(z * radius);
-        textureCoordinates.push(u);
-        textureCoordinates.push(v);
-        vertexNormals.push(x);
-        vertexNormals.push(y);
-        vertexNormals.push(z);
-        
-        i++;
-      }
-    } 
+    for (var lat = 0; lat <= NUM_LAT_SEGS; lat++) {
+        var latAngle = (Math.PI / NUM_LAT_SEGS) * lat - (Math.PI / 2);
+        var diskRadius = Math.cos(Math.abs(latAngle));
+        var z = Math.sin(latAngle);
+        //console.log('LAT: ' + latAngle * R2D + ' , Z: ' + z);
+        for (var lon = 0; lon <= NUM_LON_SEGS; lon++) { //add an extra vertex for texture funness
+            var lonAngle = (Math.PI * 2 / NUM_LON_SEGS) * lon;
+            var x = Math.cos(lonAngle) * diskRadius;
+            var y = Math.sin(lonAngle) * diskRadius;
+            //console.log('i: ' + i + '    LON: ' + lonAngle * R2D + ' X: ' + x + ' Y: ' + y)
 
-      //ok let's calculate vertex draw orders.... indiv triangles
-  var indices = [];
-  for(var lat=0; lat < NUM_LAT_SEGS; lat++) { //this is for each QUAD, not each vertex, so <
-    for(var lon=0; lon < NUM_LON_SEGS; lon++) {
-      var blVert = lat * (NUM_LON_SEGS+1) + lon; //there's NUM_LON_SEGS + 1 verts in each horizontal band
-      var brVert = blVert + 1;
-      var tlVert = (lat + 1) * (NUM_LON_SEGS+1) + lon; 
-      var trVert = tlVert + 1;
-  //    console.log('bl: ' + blVert + ' br: ' + brVert +  ' tl: ' + tlVert + ' tr: ' + trVert);
-      indices.push(blVert);
-      indices.push(brVert);
-      indices.push(tlVert);
-      
-      indices.push(tlVert);
-      indices.push(trVert);
-      indices.push(brVert);
+            //mercator cylindrical projection (simple angle interpolation)
+            var v = 1 - (lat / NUM_LAT_SEGS);
+            var u = 0.5 + (lon / NUM_LON_SEGS); //may need to change to move map
+            //console.log('u: ' + u + ' v: ' + v);
+            //normals: should just be a vector from center to point (aka the point itself!
+
+            positions.push(x * radius);
+            positions.push(y * radius);
+            positions.push(z * radius);
+            textureCoordinates.push(u);
+            textureCoordinates.push(v);
+            vertexNormals.push(x);
+            vertexNormals.push(y);
+            vertexNormals.push(z);
+
+            i++;
+        }
     }
-  }
-  vertCount = indices.length;
+
+    //ok let's calculate vertex draw orders.... indiv triangles
+    var indices = [];
+    for (var lat = 0; lat < NUM_LAT_SEGS; lat++) { //this is for each QUAD, not each vertex, so <
+        for (var lon = 0; lon < NUM_LON_SEGS; lon++) {
+            var blVert = lat * (NUM_LON_SEGS + 1) + lon; //there's NUM_LON_SEGS + 1 verts in each horizontal band
+            var brVert = blVert + 1;
+            var tlVert = (lat + 1) * (NUM_LON_SEGS + 1) + lon;
+            var trVert = tlVert + 1;
+            //    console.log('bl: ' + blVert + ' br: ' + brVert +  ' tl: ' + tlVert + ' tr: ' + trVert);
+            indices.push(blVert);
+            indices.push(brVert);
+            indices.push(tlVert);
+
+            indices.push(tlVert);
+            indices.push(trVert);
+            indices.push(brVert);
+        }
+    }
+    vertCount = indices.length;
 
 
     // Now send the element array to GL
@@ -319,10 +315,14 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
     mat4.translate(modelViewMatrix,     // destination matrix
         modelViewMatrix,     // matrix to translate
         [-0.0, 0.0, -6.0]);  // amount to translate   
-        mat4.rotate(modelViewMatrix,  // destination matrix
-            modelViewMatrix,  // matrix to rotate
-            Math.PI/2,// amount to rotate in radians
-            [-1, 0, 0]);       // axis to rotate around (X)  
+    mat4.rotate(modelViewMatrix,  // destination matrix
+        modelViewMatrix,  // matrix to rotate
+        -Math.PI / 2,// amount to rotate in radians
+        [1, 0, 0]);       // axis to rotate around (X)  
+    mat4.rotate(modelViewMatrix,  // destination matrix
+        modelViewMatrix,  // matrix to rotate
+        (Math.PI / 180) * 23.5,// amount to rotate in radians
+        [0, 1, 0]);       // axis to rotate around (X)  
     mat4.rotate(modelViewMatrix,  // destination matrix
         modelViewMatrix,  // matrix to rotate
         cubeRotation * .7,// amount to rotate in radians
