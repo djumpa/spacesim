@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
-import _thread
+import socket
+import threading
 import time
 import datetime
+
 
 host = '0.0.0.0'
 port = 1234
@@ -11,8 +12,8 @@ buf = 1024
 
 addr = (host, port)
 
-serversocket = socket(AF_INET, SOCK_STREAM)
-serversocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 serversocket.bind(addr)
 serversocket.listen(10)
 
@@ -20,6 +21,7 @@ clients = [serversocket]
 
 def handler(clientsocket, clientaddr):
     print("Accepted connection from: ", clientaddr)
+    
     while True:
         data = clientsocket.recv(1024)
         print(data.decode('utf-8'))
@@ -36,21 +38,29 @@ def handler(clientsocket, clientaddr):
     #clientsocket.close()
 
 def push():
-    while True:      
-        for i in clients:
-            if i is not serversocket: # neposilat sam sobe
-                i.send(("Curent date and time: " + str(datetime.datetime.now()) + '\n').encode())
-        time.sleep(1) # [s]
+    try:
+        while True:      
+            for i in clients:
+                if i is not serversocket: # neposilat sam sobe
+                    i.send(("Curent date and time: " + str(datetime.datetime.now())+ '\n').encode())
+            time.sleep(0.1) # [s]
+    except ConnectionResetError:
+        print("Connection ended on the otherside")
+        exit
 
-
-_thread.start_new_thread(push, ())
+x = threading.Thread(target=push, args=())
+x.start()
 
 while True:
     try:
-        print("Server is listening for connections\n")
+        print("Server is listening for connections")
+
         clientsocket, clientaddr = serversocket.accept()
         clients.append(clientsocket)
-        _thread.start_new_thread(handler, (clientsocket, clientaddr))
+
+        #y = threading.Thread(target=handler, args=(clientsocket, clientaddr))
+        #y.start()
+
     except KeyboardInterrupt: # Ctrl+C # FIXME: vraci "raise error(EBADF, 'Bad file descriptor')"
         print("Closing server socket...")
         serversocket.close()

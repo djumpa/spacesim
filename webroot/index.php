@@ -21,5 +21,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
 <script src="satellite.js"></script>
 <script src="webgl-spacesim.js"></script>
+<script src="websocket.js"></script>
 
 </html>
