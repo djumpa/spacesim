@@ -39,10 +39,16 @@ def handler(clientsocket, clientaddr):
 
 def push():
     try:
-        while True:      
+        while True: 
+            velocity = [0.0, 0.0, 0.0]
+            position = [0.0, 1.0, 2.0]
+
+            velocity_str = "VEL:"+str(velocity[0]) + " " +  str(velocity[1]) + " " + str(velocity[2])    
+            position_str = "POS:"+str(position[0]) + " " +  str(position[1]) + " " + str(position[2])    
+
             for i in clients:
                 if i is not serversocket: # neposilat sam sobe
-                    i.send(("Curent date and time: " + str(datetime.datetime.now())+ '\n').encode())
+                    i.send((velocity_str+'\n'+position_str+'\n').encode())
             time.sleep(0.1) # [s]
     except ConnectionResetError:
         print("Connection ended on the otherside")

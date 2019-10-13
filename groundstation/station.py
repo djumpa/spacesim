@@ -34,11 +34,11 @@ async def hello(websocket, path):
     name = await websocket.recv()
     print(f"< {name}")
 
-    greeting = f"Hello {name}!"
     global reply
+    while True:
+        await websocket.send(reply)
+        time.sleep(1)
 
-    await websocket.send(reply)
-    print(f"> {greeting}")
 
 x = threading.Thread(target=sock_client, args=())
 x.start()
