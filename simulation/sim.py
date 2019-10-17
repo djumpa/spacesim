@@ -4,6 +4,8 @@ import socket
 import threading
 import time
 import datetime
+import numpy as np
+import json
 
 
 host = '0.0.0.0'
@@ -18,6 +20,8 @@ serversocket.bind(addr)
 serversocket.listen(10)
 
 clients = [serversocket]
+
+bodies = []
 
 def handler(clientsocket, clientaddr):
     print("Accepted connection from: ", clientaddr)
@@ -40,23 +44,48 @@ def handler(clientsocket, clientaddr):
 def push():
     try:
         while True: 
-            velocity = [0.0, 0.0, 0.0]
-            position = [0.0, 1.0, 2.0]
-
-            velocity_str = "VEL:"+str(velocity[0]) + " " +  str(velocity[1]) + " " + str(velocity[2])    
-            position_str = "POS:"+str(position[0]) + " " +  str(position[1]) + " " + str(position[2])    
-
             for i in clients:
                 if i is not serversocket: # neposilat sam sobe
-                    i.send((velocity_str+'\n'+position_str+'\n').encode())
+                    i.send(json.dumps(bodies).encode())
             time.sleep(0.1) # [s]
     except ConnectionResetError:
         print("Connection ended on the otherside")
         exit
 
+def sim_loop():
+    while True:
+        # Inital conditions and constants
+        G = 1
+        dt = 0.01
+
+        sc = [{
+            "pos" : [100.0, 0.0, 0,0],
+            "vel" : [0.0, 0.0, 0,0]
+        }]
+
+        earth = [{
+            "pos" : [0.0, 0.0, 0,0],
+            "vel" : [0.0, 0.0, 0,0]
+        }]
+
+        global bodies
+        bodies = [sc,earth]
+
+        for i,body in enumerate(bodies):
+            #print(body[0]["pos"])
+            print(np.linalg.norm(np.array(body[0]["pos"])))
+
+        
+
 x = threading.Thread(target=push, args=())
 x.start()
 
+sim_thread = threading.Thread(target=sim_loop, args=())
+sim_thread.start()
+
+
+
+        
 while True:
     try:
         print("Server is listening for connections")
