@@ -53,28 +53,62 @@ def push():
         exit
 
 def sim_loop():
+    print("Start of sim thread")
+    # Inital conditions and constants
+    G = 1
+    dt = 0.1
+
+    sc = {
+        "pos" : [101.0, 0.0, 0,0],
+        "vel" : [0.0, 0.0, 0,0],
+        "mass": 10
+    }
+
+    sun = {
+        "pos" : [0.0, 0.0, 0,0],
+        "vel" : [0.0, 0.0, 0,0],
+        "mass" : 100000
+    }
+
+    earth = {
+        "pos" : [100.0, 0.0, 0,0],
+        "vel" : [0.0, 0.0, 0,0],
+        "mass" : 1000
+    }
+
+    moon = {
+        "pos" : [110.0, 0.0, 0,0],
+        "vel" : [0.0, 0.0, 0,0],
+        "mass" : 100
+    }
+
+    global bodies
+    bodies = {"sun": sun, "sc": sc,"earth": earth, "moon": moon}
     while True:
-        # Inital conditions and constants
-        G = 1
-        dt = 0.01
+        
 
-        sc = [{
-            "pos" : [100.0, 0.0, 0,0],
-            "vel" : [0.0, 0.0, 0,0]
-        }]
-
-        earth = [{
-            "pos" : [0.0, 0.0, 0,0],
-            "vel" : [0.0, 0.0, 0,0]
-        }]
-
-        global bodies
-        bodies = [sc,earth]
+        r = {}
+        for i,body in enumerate(bodies):
+        
+            #print(body)     
+            for other_body in bodies:
+                if not body==other_body:
+                    r[other_body] = np.linalg.norm(np.array(bodies[body]["pos"])-np.array(bodies[other_body]["pos"]))
 
         for i,body in enumerate(bodies):
-            #print(body[0]["pos"])
-            print(np.linalg.norm(np.array(body[0]["pos"])))
+            print(body)
+            for other_body in bodies:
+                if not body==other_body:
+                    tmp = G * bodies[body]["mass"] / r[other_body]**3
+                    acc = tmp * r[body]
+                    vel = bodies[body]["vel"] + acc * dt
+                    pos = bodies[body]["pos"] + vel * dt #symplectic, because we take already computed velocity
+                    bodies[body]["pos"] = pos
+                    print(pos)     
 
+        time.sleep(dt)       
+
+    
         
 
 x = threading.Thread(target=push, args=())
