@@ -20,8 +20,8 @@ function init()
 
     window.addEventListener('resize', onWindowResize, false);
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0,0,30);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5e13);
+    camera.position.set(0,0,2e11);
     camera.lookAt(new THREE.Vector3(0,0,0));
 
     scene = new THREE.Scene();
@@ -44,21 +44,27 @@ function init()
     scene.background = background;
 
 
-    sun = new THREE.PointLight( 0xffffff, 30, 1000, 2);
-    var geometry = new THREE.SphereGeometry(15,32,32);
+    sun = new THREE.PointLight( 0xffffff, 30, 5e13, 2);
+    var geometry = new THREE.SphereGeometry(69551000000,32,32);
     var material = new THREE.MeshBasicMaterial({color:0xffffff});
     var path = 'res/sun.jpg';
     material = loadElement(path,material);
     sun.add(new THREE.Mesh(geometry, material));
+    sun.castShadow = true;            // default false
     scene.add( sun );
 
+    //Set up shadow properties for the light
+    sun.shadow.mapSize.width = 512;  // default
+    sun.shadow.mapSize.height = 512; // default
+    sun.shadow.camera.near = 0.5;       // default
+    sun.shadow.camera.far = 5e13      // default
 
-    geometry = new THREE.SphereGeometry(10,32,32);
-    planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [100, 0, 0] , sun, geometry, 'phong', 'res/earthday.jpg'));
+    geometry = new THREE.SphereGeometry(637100000,32,32);
+    planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [1.5e11, 0, 0] , sun, geometry, 'phong', 'res/earthday.jpg'));
     scene.add(planets[planets.length - 1].mesh);
 
-    geometry = new THREE.SphereGeometry(1,32,32);
-    planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [100, 0, 0] , planets[0].mesh, geometry, 'phong', 'res/moon.jpg'))
+    geometry = new THREE.SphereGeometry(173710000,32,32);
+    planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [1.5e11+384399000, 0, 0] , planets[0].mesh, geometry, 'phong', 'res/moon.jpg'))
     scene.add(planets[planets.length - 1].mesh);
 
     geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -92,6 +98,9 @@ function generatePlanet(orbitingRate, rotationRate, distance, orbitingCenter, ge
     mesh.rotation.x = rotationRate[0];
     mesh.rotation.y = rotationRate[1];
     mesh.rotation.z = rotationRate[2];
+
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
 
     return {
         orbitingRate: orbitingRate,
@@ -153,20 +162,26 @@ function render(time) {
     Call to update the orientatino and position of planets
 
     for(var i = 0; i < planets.length; i++)
-        planets[0].update(time);
+        planets[i].update(time);
     */
+   if (!jQuery.isEmptyObject(ws_data)) {
+
+    //sun.mesh.position.set(ws_data[0].position[0], ws_data[0].position[2], ws_data[0].position[1]); 
 
     planets[0].mesh.rotateOnAxis( new THREE.Vector3(0, 1, 0).normalize(), 0.007  );  
-    
-    planets[1].mesh.position.set(60*Math.sin(time), 5*Math.sin(time), 60*Math.cos(time));
+    planets[0].mesh.position.set(ws_data[1].position[0], ws_data[1].position[2], ws_data[1].position[1]);  
+
+    planets[1].mesh.position.set(ws_data[2].position[0], ws_data[2].position[2], ws_data[2].position[1]);
     planets[1].mesh.rotation.y =  0.1 * time;
 
-    sat.position.x = 20*Math.sin(time);
-    sat.position.z = 20*Math.cos(time);
+    sat.position.x = ws_data[3].position[0];
+    sat.position.y = ws_data[3].position[2];
+    sat.position.z = ws_data[3].position[1];
     sat.rotation.x = time;
     sat.rotation.y = time;
     sat.rotation.z = time;
     
     renderer.render(scene, camera);
+   }
     requestAnimationFrame(render);
 }

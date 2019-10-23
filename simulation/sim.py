@@ -24,7 +24,7 @@ clients = [serversocket]
 
 bodies = []
 def calculate_single_body_acceleration(bodies, body_index):
-    G_const = 1 #m3 kg-1 s-2
+    G_const = 6.67408e-11  #m3 kg-1 s-2
     acceleration = [0,0,0]
     target_body = bodies[body_index]
     for index, external_body in enumerate(bodies):
@@ -70,6 +70,7 @@ def handler(clientsocket, clientaddr):
 
 def push():
     try:
+        print("Start of push thread")
         while True: 
             for i in clients:
                 if i is not serversocket: # neposilat sam sobe
@@ -84,19 +85,20 @@ def sim_loop():
     print("Start of sim thread")
     # Inital conditions and constants
     
-    dt = 0.02
+    dt = 100
 
-    sc = {"position":[15,0,0], "mass":1, "velocity":[0,10,0], "name": "sc"}
-    earth = {"position":[0,0,0], "mass":1000, "velocity":[0,0,0], "name": "earth"}
-
+    sc = {"position":[1.5e11+7000000,0,0], "mass":1, "velocity":[0,30000+2000,0], "name": "sc"}
+    earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth"}
+    sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun"}
+    moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon"}
 
     global bodies
-    bodies = [sc, earth]
+    bodies = [sun, earth, moon, sc]
 
 
     while True:
         compute_gravity_step(bodies, time_step = dt)      
-        time.sleep(0.001)
+        #time.sleep(0.001)
     
         
 
