@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import socket
 import threading
 import time
@@ -22,6 +23,32 @@ serversocket.listen(10)
 clients = [serversocket]
 
 bodies = []
+def calculate_single_body_acceleration(bodies, body_index):
+    G_const = 1 #m3 kg-1 s-2
+    acceleration = [0,0,0]
+    target_body = bodies[body_index]
+    for index, external_body in enumerate(bodies):
+        if index != body_index:
+            r = (target_body["position"][0] - external_body["position"][0])**2 + (target_body["position"][1] - external_body["position"][1])**2 + (target_body["position"][2] - external_body["position"][2])**2
+            r = math.sqrt(r)
+            tmp = G_const * external_body["mass"] / r**3
+            acceleration[0] += tmp * (external_body["position"][0] - target_body["position"][0])
+            acceleration[1] += tmp * (external_body["position"][1] - target_body["position"][1])
+            acceleration[2] += tmp * (external_body["position"][2] - target_body["position"][2])
+
+    return acceleration
+
+def compute_gravity_step(bodies, time_step = 1):
+    for body_index, target_body in enumerate(bodies):
+        acceleration = calculate_single_body_acceleration(bodies, body_index)
+
+        target_body["velocity"][0] += acceleration[0] * time_step
+        target_body["velocity"][1] += acceleration[1] * time_step
+        target_body["velocity"][2] += acceleration[2] * time_step 
+
+        target_body["position"][0] += target_body["velocity"][0] * time_step
+        target_body["position"][1] += target_body["velocity"][1] * time_step
+        target_body["position"][2] += target_body["velocity"][2] * time_step
 
 def handler(clientsocket, clientaddr):
     print("Accepted connection from: ", clientaddr)
@@ -46,8 +73,9 @@ def push():
         while True: 
             for i in clients:
                 if i is not serversocket: # neposilat sam sobe
+                    #print(bodies)
                     i.send(json.dumps(bodies).encode())
-            time.sleep(0.1) # [s]
+            time.sleep(0.001) # [s]
     except ConnectionResetError:
         print("Connection ended on the otherside")
         exit
@@ -55,59 +83,20 @@ def push():
 def sim_loop():
     print("Start of sim thread")
     # Inital conditions and constants
-    G = 1
-    dt = 0.1
+    
+    dt = 0.02
 
-    sc = {
-        "pos" : [101.0, 0.0, 0,0],
-        "vel" : [0.0, 0.0, 0,0],
-        "mass": 10
-    }
+    sc = {"position":[15,0,0], "mass":1, "velocity":[0,10,0], "name": "sc"}
+    earth = {"position":[0,0,0], "mass":1000, "velocity":[0,0,0], "name": "earth"}
 
-    sun = {
-        "pos" : [0.0, 0.0, 0,0],
-        "vel" : [0.0, 0.0, 0,0],
-        "mass" : 100000
-    }
-
-    earth = {
-        "pos" : [100.0, 0.0, 0,0],
-        "vel" : [0.0, 0.0, 0,0],
-        "mass" : 1000
-    }
-
-    moon = {
-        "pos" : [110.0, 0.0, 0,0],
-        "vel" : [0.0, 0.0, 0,0],
-        "mass" : 100
-    }
 
     global bodies
-    bodies = {"sun": sun, "sc": sc,"earth": earth, "moon": moon}
+    bodies = [sc, earth]
+
+
     while True:
-        
-
-        r = {}
-        for i,body in enumerate(bodies):
-        
-            #print(body)     
-            for other_body in bodies:
-                if not body==other_body:
-                    r[other_body] = np.linalg.norm(np.array(bodies[body]["pos"])-np.array(bodies[other_body]["pos"]))
-
-        for i,body in enumerate(bodies):
-            print(body)
-            for other_body in bodies:
-                if not body==other_body:
-                    tmp = G * bodies[body]["mass"] / r[other_body]**3
-                    acc = tmp * r[body]
-                    vel = bodies[body]["vel"] + acc * dt
-                    pos = bodies[body]["pos"] + vel * dt #symplectic, because we take already computed velocity
-                    bodies[body]["pos"] = pos
-                    print(pos)     
-
-        time.sleep(dt)       
-
+        compute_gravity_step(bodies, time_step = dt)      
+        time.sleep(0.001)
     
         
 

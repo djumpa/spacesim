@@ -8,7 +8,7 @@ function main() {
     const near = 0.1;
     const far = 500;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 30;
+    camera.position.z = 60;
     camera.position.y = 0;
 
     const scene = new THREE.Scene();
@@ -48,21 +48,25 @@ function main() {
     function render(time) {
         time *= 0.001;  // convert time to seconds
 
+        if (!jQuery.isEmptyObject(ws_data)) {
 
+        
         cube.rotateOnAxis( new THREE.Vector3(0, 1, 0).normalize(), 0.007  );  
-        sat.position.x = 20*Math.sin(time);
-        sat.position.z = 20*Math.cos(time);
+        sat.position.x = ws_data[0].position[0]
+        sat.position.y = ws_data[0].position[1]
+        sat.position.z = ws_data[0].position[2]
         sat.rotation.x = time;
         sat.rotation.y = time;
         sat.rotation.z = time;
         //cube.rotation.y = time;
 
         renderer.render(scene, camera);
-
+        }
         requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
 
 }
 
-main();
+main(); 
+
