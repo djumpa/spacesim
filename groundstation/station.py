@@ -24,8 +24,8 @@ def sock_client():
             
             global reply
             reply = clientsocket.recv(buf).decode('utf-8')
-            if reply:
-                print("REPLY: " + reply)
+            #if reply:
+                #print("REPLY: " + reply)
         except KeyboardInterrupt: # Ctrl+C # FIXME: vraci "raise error(EBADF, 'Bad file descriptor')"
             print("Closing...")
             break
@@ -37,7 +37,7 @@ async def hello(websocket, path):
     global reply
     while True:
         await websocket.send(reply)
-        time.sleep(1)
+        time.sleep(0.01)
 
 
 x = threading.Thread(target=sock_client, args=())

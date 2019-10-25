@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+import math
 import socket
 import threading
 import time
 import datetime
+import numpy as np
+import json
 
 
 host = '0.0.0.0'
@@ -18,6 +21,34 @@ serversocket.bind(addr)
 serversocket.listen(10)
 
 clients = [serversocket]
+
+bodies = []
+def calculate_single_body_acceleration(bodies, body_index):
+    G_const = 6.67408e-11  #m3 kg-1 s-2
+    acceleration = [0,0,0]
+    target_body = bodies[body_index]
+    for index, external_body in enumerate(bodies):
+        if index != body_index:
+            r = (target_body["position"][0] - external_body["position"][0])**2 + (target_body["position"][1] - external_body["position"][1])**2 + (target_body["position"][2] - external_body["position"][2])**2
+            r = math.sqrt(r)
+            tmp = G_const * external_body["mass"] / r**3
+            acceleration[0] += tmp * (external_body["position"][0] - target_body["position"][0])
+            acceleration[1] += tmp * (external_body["position"][1] - target_body["position"][1])
+            acceleration[2] += tmp * (external_body["position"][2] - target_body["position"][2])
+
+    return acceleration
+
+def compute_gravity_step(bodies, time_step = 1):
+    for body_index, target_body in enumerate(bodies):
+        acceleration = calculate_single_body_acceleration(bodies, body_index)
+
+        target_body["velocity"][0] += acceleration[0] * time_step
+        target_body["velocity"][1] += acceleration[1] * time_step
+        target_body["velocity"][2] += acceleration[2] * time_step 
+
+        target_body["position"][0] += target_body["velocity"][0] * time_step
+        target_body["position"][1] += target_body["velocity"][1] * time_step
+        target_body["position"][2] += target_body["velocity"][2] * time_step
 
 def handler(clientsocket, clientaddr):
     print("Accepted connection from: ", clientaddr)
@@ -39,24 +70,47 @@ def handler(clientsocket, clientaddr):
 
 def push():
     try:
+        print("Start of push thread")
         while True: 
-            velocity = [0.0, 0.0, 0.0]
-            position = [0.0, 1.0, 2.0]
-
-            velocity_str = "VEL:"+str(velocity[0]) + " " +  str(velocity[1]) + " " + str(velocity[2])    
-            position_str = "POS:"+str(position[0]) + " " +  str(position[1]) + " " + str(position[2])    
-
             for i in clients:
                 if i is not serversocket: # neposilat sam sobe
-                    i.send((velocity_str+'\n'+position_str+'\n').encode())
-            time.sleep(0.1) # [s]
+                    #print(bodies)
+                    i.send(json.dumps(bodies).encode())
+            time.sleep(0.001) # [s]
     except ConnectionResetError:
         print("Connection ended on the otherside")
         exit
 
+def sim_loop():
+    print("Start of sim thread")
+    # Inital conditions and constants
+    
+    dt = 100
+
+    sc = {"position":[1.5e11+7000000,0,0], "mass":1, "velocity":[0,30000+2000,0], "name": "sc"}
+    earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth"}
+    sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun"}
+    moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon"}
+
+    global bodies
+    bodies = [sun, earth, moon, sc]
+
+
+    while True:
+        compute_gravity_step(bodies, time_step = dt)      
+        #time.sleep(0.001)
+    
+        
+
 x = threading.Thread(target=push, args=())
 x.start()
 
+sim_thread = threading.Thread(target=sim_loop, args=())
+sim_thread.start()
+
+
+
+        
 while True:
     try:
         print("Server is listening for connections")
