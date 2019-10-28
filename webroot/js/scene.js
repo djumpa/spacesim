@@ -5,11 +5,11 @@ import { NoBlending } from './three.module.js';
 var camera, scene, renderer;
 var planets = [];
 
-var sat, sun, line, line_earth;
+var sat, sun, line, line_earth, line_sat;
 var container;
 
 
-const MAX_LINE_ELEMENTS = 10;
+
 
 init();
 render();
@@ -21,7 +21,7 @@ function init()
 
     window.addEventListener('resize', onWindowResize, false);
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 10000, 5e11);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5e11);
     camera.position.set(0,0,2e11);
     camera.lookAt(new THREE.Vector3(0,0,0));
 
@@ -45,7 +45,7 @@ function init()
     scene.background = background;
 
 
-    sun = new THREE.PointLight( 0xffffff, 30, 5e13, 2);
+    sun = new THREE.PointLight( 0xffffff, 5, 5e13, 2);
     var geometry = new THREE.SphereGeometry(695510000,32,32);
     var material = new THREE.MeshBasicMaterial({color:0xffffff});
     var path = 'res/sun.jpg';
@@ -75,6 +75,13 @@ function init()
         line.geometry.vertices.push(new THREE.Vector3(0, 0, 0));   
     }
     scene.add(line)
+
+    geometry = new THREE.Geometry();
+    line_sat = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x0000ff }));
+    for (let index = 0; index < MAX_LINE_ELEMENTS; index++) { 
+        line_sat.geometry.vertices.push(new THREE.Vector3(0, 0, 0));   
+    }
+    scene.add(line_sat)
 
     geometry = new THREE.Geometry();
     line_earth = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xff0000 }));
@@ -174,7 +181,8 @@ function render(time) {
     for(var i = 0; i < planets.length; i++)
         planets[i].update(time);
     */
-   if (!jQuery.isEmptyObject(ws_data)) {
+    
+   if (ws_data_hist[0].length==MAX_LINE_ELEMENTS) {
 
     //sun.mesh.position.set(ws_data[0].position[0], ws_data[0].position[2], ws_data[0].position[1]); 
 
@@ -185,13 +193,15 @@ function render(time) {
     planets[1].mesh.rotation.y =  0.1 * time;
 
     
-    for (let index = 0; index < ws_data[2].pos_hist.length; index++) {
-         
-        line.geometry.vertices[index] = new THREE.Vector3(ws_data[2].pos_hist[index][0], ws_data[2].pos_hist[index][2], ws_data[2].pos_hist[index][1]); 
+    for (let index = 0; index < MAX_LINE_ELEMENTS; index++) {
+        //console.log(ws_data_hist); 
+        line.geometry.vertices[index] = new THREE.Vector3(ws_data_hist[2][index][0], ws_data_hist[2][index][2], ws_data_hist[2][index][1]); 
         line.geometry.verticesNeedUpdate  = true; 
         
+        line_sat.geometry.vertices[index] = new THREE.Vector3(ws_data_hist[3][index][0], ws_data_hist[3][index][2], ws_data_hist[3][index][1]);
+        line_sat.geometry.verticesNeedUpdate  = true; 
 
-        line_earth.geometry.vertices[index] = new THREE.Vector3(ws_data[1].pos_hist[index][0], ws_data[1].pos_hist[index][2], ws_data[1].pos_hist[index][1]);
+        line_earth.geometry.vertices[index] = new THREE.Vector3(ws_data_hist[1][index][0], ws_data_hist[1][index][2], ws_data_hist[1][index][1]);
         line_earth.geometry.verticesNeedUpdate  = true; 
         
     }
@@ -209,7 +219,7 @@ function render(time) {
     sat.rotation.z = time;
 
 
-    //camera.position.set(ws_data[1].position[0], ws_data[1].position[2], (ws_data[1].position[1]+19710000));
+    //camera.position.set(ws_data[3].position[0], ws_data[3].position[2], (ws_data[3].position[1]+10));
     
     renderer.render(scene, camera);
    }

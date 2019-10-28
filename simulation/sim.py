@@ -84,34 +84,21 @@ def push():
 def sim_loop():
     print("Start of sim thread")
     # Inital conditions and constants
-    report_step = 1000
-    history_size = 10
-    step = 0
+
     dt = 100
 
-    sc = {"position":[1.5e11+7000000,0,0], "mass":1, "velocity":[0,30000+2000,0], "name": "sc", "pos_hist":[]}
-    earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth", "pos_hist":[]}
-    sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun", "pos_hist":[]}
-    moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon", "pos_hist":[]}
+    sc = {"position":[1.5e11+7000000,0,0], "mass":1, "velocity":[0,30000+3000,0], "name": "sc"}
+    earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth",}
+    sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun"}
+    moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon"}
 
     global bodies
     bodies = [sun, earth, moon, sc]
 
 
     while True:
-        compute_gravity_step(bodies, time_step = dt)  
-        if step%report_step==0:
-            
-            for body in bodies:
-                #print(body["pos_hist"]) 
-                body["pos_hist"].append(body["position"][:]) #deep copy
-                if len(body["pos_hist"])>history_size:
-                    body["pos_hist"].pop(0)    
-            step=0 
-            
-        step += 1 
-         
-        time.sleep(0.001)
+        compute_gravity_step(bodies, time_step = dt)    
+        time.sleep(0.04)
     
         
 
