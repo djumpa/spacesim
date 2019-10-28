@@ -5,10 +5,11 @@ import { NoBlending } from './three.module.js';
 var camera, scene, renderer;
 var planets = [];
 
-var sat, sun;
+var sat, sun, line, line_earth;
 var container;
 
 
+const MAX_LINE_ELEMENTS = 10;
 
 init();
 render();
@@ -20,7 +21,7 @@ function init()
 
     window.addEventListener('resize', onWindowResize, false);
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5e13);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 10000, 5e11);
     camera.position.set(0,0,2e11);
     camera.lookAt(new THREE.Vector3(0,0,0));
 
@@ -45,25 +46,21 @@ function init()
 
 
     sun = new THREE.PointLight( 0xffffff, 30, 5e13, 2);
-    var geometry = new THREE.SphereGeometry(69551000000,32,32);
+    var geometry = new THREE.SphereGeometry(695510000,32,32);
     var material = new THREE.MeshBasicMaterial({color:0xffffff});
     var path = 'res/sun.jpg';
     material = loadElement(path,material);
     sun.add(new THREE.Mesh(geometry, material));
-    sun.castShadow = true;            // default false
+    
     scene.add( sun );
 
-    //Set up shadow properties for the light
-    sun.shadow.mapSize.width = 512;  // default
-    sun.shadow.mapSize.height = 512; // default
-    sun.shadow.camera.near = 0.5;       // default
-    sun.shadow.camera.far = 5e13      // default
 
-    geometry = new THREE.SphereGeometry(637100000,32,32);
+
+    geometry = new THREE.SphereGeometry(6371000,32,32);
     planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [1.5e11, 0, 0] , sun, geometry, 'phong', 'res/earthday.jpg'));
     scene.add(planets[planets.length - 1].mesh);
 
-    geometry = new THREE.SphereGeometry(173710000,32,32);
+    geometry = new THREE.SphereGeometry(1737100,32,32);
     planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [1.5e11+384399000, 0, 0] , planets[0].mesh, geometry, 'phong', 'res/moon.jpg'))
     scene.add(planets[planets.length - 1].mesh);
 
@@ -71,6 +68,20 @@ function init()
     material = new THREE.MeshPhongMaterial({shininess: 0, color: 0xFFF0E9});
     sat = new THREE.Mesh(geometry, material);
     scene.add(sat);
+
+    geometry = new THREE.Geometry();
+    line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x00ff00 }));
+    for (let index = 0; index < MAX_LINE_ELEMENTS; index++) { 
+        line.geometry.vertices.push(new THREE.Vector3(0, 0, 0));   
+    }
+    scene.add(line)
+
+    geometry = new THREE.Geometry();
+    line_earth = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xff0000 }));
+    for (let index = 0; index < MAX_LINE_ELEMENTS; index++) { 
+        line_earth.geometry.vertices.push(new THREE.Vector3(0, 0, 0));   
+    }
+    scene.add(line_earth)
 }
 
 function loadElement(path, material)
@@ -99,8 +110,7 @@ function generatePlanet(orbitingRate, rotationRate, distance, orbitingCenter, ge
     mesh.rotation.y = rotationRate[1];
     mesh.rotation.z = rotationRate[2];
 
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+
 
     return {
         orbitingRate: orbitingRate,
@@ -157,7 +167,7 @@ function onWindowResize()
 function render(time) {
     
     time *= 0.001;  // convert time to seconds
-  
+    
     /*
     Call to update the orientatino and position of planets
 
@@ -174,12 +184,32 @@ function render(time) {
     planets[1].mesh.position.set(ws_data[2].position[0], ws_data[2].position[2], ws_data[2].position[1]);
     planets[1].mesh.rotation.y =  0.1 * time;
 
+    
+    for (let index = 0; index < ws_data[2].pos_hist.length; index++) {
+         
+        line.geometry.vertices[index] = new THREE.Vector3(ws_data[2].pos_hist[index][0], ws_data[2].pos_hist[index][2], ws_data[2].pos_hist[index][1]); 
+        line.geometry.verticesNeedUpdate  = true; 
+        
+
+        line_earth.geometry.vertices[index] = new THREE.Vector3(ws_data[1].pos_hist[index][0], ws_data[1].pos_hist[index][2], ws_data[1].pos_hist[index][1]);
+        line_earth.geometry.verticesNeedUpdate  = true; 
+        
+    }
+    //console.log(line.geometry.vertices)  
+        
+    
+  
+
+   
     sat.position.x = ws_data[3].position[0];
     sat.position.y = ws_data[3].position[2];
     sat.position.z = ws_data[3].position[1];
     sat.rotation.x = time;
     sat.rotation.y = time;
     sat.rotation.z = time;
+
+
+    //camera.position.set(ws_data[1].position[0], ws_data[1].position[2], (ws_data[1].position[1]+19710000));
     
     renderer.render(scene, camera);
    }

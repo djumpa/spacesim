@@ -8,7 +8,7 @@ import threading
 
 host = 'localhost'
 port = 1234
-buf = 1024
+buf = 16384
 reply = ''
 
 def sock_client():
