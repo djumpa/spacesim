@@ -85,9 +85,9 @@ def sim_loop():
     print("Start of sim thread")
     # Inital conditions and constants
 
-    dt = 100
+    dt = 10
 
-    sc = {"position":[1.5e11+7000000,0,0], "mass":1, "velocity":[0,30000+3000,0], "name": "sc"}
+    sc = {"position":[1.5e11+6971000,0,0], "mass":1, "velocity":[0,30000+8500,0], "name": "sc"}
     earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth",}
     sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun"}
     moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon"}
@@ -98,7 +98,7 @@ def sim_loop():
 
     while True:
         compute_gravity_step(bodies, time_step = dt)    
-        time.sleep(0.04)
+        time.sleep(0.02)
     
         
 

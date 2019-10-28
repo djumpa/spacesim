@@ -37,7 +37,7 @@ async def hello(websocket, path):
     global reply
     while True:
         await websocket.send(reply)
-        time.sleep(0.04)
+        time.sleep(0.02)
 
 
 x = threading.Thread(target=sock_client, args=())

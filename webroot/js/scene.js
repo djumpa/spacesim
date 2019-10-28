@@ -77,7 +77,7 @@ function init()
     scene.add(line)
 
     geometry = new THREE.Geometry();
-    line_sat = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x0000ff }));
+    line_sat = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
     for (let index = 0; index < MAX_LINE_ELEMENTS; index++) { 
         line_sat.geometry.vertices.push(new THREE.Vector3(0, 0, 0));   
     }
@@ -182,9 +182,11 @@ function render(time) {
         planets[i].update(time);
     */
     
-   if (ws_data_hist[0].length==MAX_LINE_ELEMENTS) {
+    
+   if (!jQuery.isEmptyObject(ws_data)) {
+       
 
-    //sun.mesh.position.set(ws_data[0].position[0], ws_data[0].position[2], ws_data[0].position[1]); 
+    sun.position.set(ws_data[0].position[0], ws_data[0].position[2], ws_data[0].position[1]); 
 
     planets[0].mesh.rotateOnAxis( new THREE.Vector3(0, 1, 0).normalize(), 0.007  );  
     planets[0].mesh.position.set(ws_data[1].position[0], ws_data[1].position[2], ws_data[1].position[1]);  
@@ -219,8 +221,8 @@ function render(time) {
     sat.rotation.z = time;
 
 
-    //camera.position.set(ws_data[3].position[0], ws_data[3].position[2], (ws_data[3].position[1]+10));
-    
+    //camera.position.set(ws_data[1].position[0], ws_data[1].position[2]+1000000, (ws_data[1].position[1]+20771000));
+    //camera.lookAt(ws_data[1].position[0], ws_data[1].position[2], ws_data[1].position[1]);
     renderer.render(scene, camera);
    }
     requestAnimationFrame(render);
