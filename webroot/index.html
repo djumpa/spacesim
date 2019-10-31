@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="style.css" type="text/css">
-
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
   <title>spacesim v.2</title>
 
 </head>
@@ -16,10 +16,23 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 <script src="js/websocket.js"></script>
 <script src="js/three.js"></script>
 <script type = "module" src="js/scene.js"></script>
-
+<div class="orbit-info">
+  <h3>S/C orbit info</h3>
+  Eccentricity (e):<br><span class="e pl-3"></span><br>
+  Semimajor axis (a):<br><span class="a pl-3"></span> km<br>
+  Inclination (i):<br><span class="i pl-3"></span> deg<br>
+  Longitude of ascending node (&omega;):<br><span class="omega pl-3"></span> deg<br>
+  Argument of periapsis (&Omega;):<br><span class="capital-omega pl-3"></span> deg<br>
+  True anomaly (&nu;):<br><span class="nu pl-3"></span> deg<br>
+  Periapsis (pe):<br><span class="pe pl-3"></span> km<br>
+  Apoapsis (ap):<br><span class="ap pl-3"></span> km<br>
+  Position:<br><span class="pos pl-3"></span> km<br>
+  Velocity:<br><span class="vel pl-3"></span> m/s<br>
+</div>
 </body>
 
 </html>

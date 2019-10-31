@@ -11,7 +11,7 @@ import json
 
 host = '0.0.0.0'
 port = 1234
-buf = 16384
+buf = 32768
 
 addr = (host, port)
 
@@ -76,7 +76,7 @@ def push():
                 if i is not serversocket: # neposilat sam sobe
                     #print(bodies)
                     i.send(json.dumps(bodies).encode())
-            time.sleep(0.001) # [s]
+            time.sleep(0.01) # [s]
     except ConnectionResetError:
         print("Connection ended on the otherside")
         exit
@@ -85,10 +85,10 @@ def sim_loop():
     print("Start of sim thread")
     # Inital conditions and constants
 
-    dt = 10
+    dt = 1
 
-    sc = {"position":[1.5e11+6971000,0,0], "mass":1, "velocity":[0,30000+8500,0], "name": "sc"}
-    earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth",}
+    sc = {"position":[1.5e11+5700000,0,5700000], "mass":1, "velocity":[0,30000+8000,0], "name": "sc"}
+    earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth","mu": 3.986004418e14}
     sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun"}
     moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon"}
 
@@ -98,7 +98,7 @@ def sim_loop():
 
     while True:
         compute_gravity_step(bodies, time_step = dt)    
-        time.sleep(0.02)
+        time.sleep(0.005)
     
         
 

@@ -21,7 +21,7 @@ function init()
 
     window.addEventListener('resize', onWindowResize, false);
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5e11);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 100000, 5e11);
     camera.position.set(0,0,2e11);
     camera.lookAt(new THREE.Vector3(0,0,0));
 
@@ -188,11 +188,11 @@ function render(time) {
 
     sun.position.set(ws_data[0].position[0], ws_data[0].position[2], ws_data[0].position[1]); 
 
-    planets[0].mesh.rotateOnAxis( new THREE.Vector3(0, 1, 0).normalize(), 0.007  );  
+    planets[0].mesh.rotateOnAxis( new THREE.Vector3(0, 1, 0).normalize(), -0.0007  );  
     planets[0].mesh.position.set(ws_data[1].position[0], ws_data[1].position[2], ws_data[1].position[1]);  
 
     planets[1].mesh.position.set(ws_data[2].position[0], ws_data[2].position[2], ws_data[2].position[1]);
-    planets[1].mesh.rotation.y =  0.1 * time;
+    planets[1].mesh.rotation.y =  0.01 * time;
 
     
     for (let index = 0; index < MAX_LINE_ELEMENTS; index++) {
@@ -221,7 +221,7 @@ function render(time) {
     sat.rotation.z = time;
 
 
-    //camera.position.set(ws_data[1].position[0], ws_data[1].position[2]+1000000, (ws_data[1].position[1]+20771000));
+    //camera.position.set(ws_data[3].position[0], ws_data[3].position[2]+1, (ws_data[3].position[1]+10));
     //camera.lookAt(ws_data[1].position[0], ws_data[1].position[2], ws_data[1].position[1]);
     renderer.render(scene, camera);
    }
