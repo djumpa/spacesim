@@ -2,6 +2,7 @@
 import os
 import signal
 import sys
+import time
 from multiprocessing import Process
 
 #project imports
@@ -37,8 +38,8 @@ def check_and_run():
     if error_code:
         os.system("sudo service apache2 start")      
 
-    Process(target=simulation.run).start()
-    Process(target=groundstation.run).start()     
+    simulation.run()
+    groundstation.run()
 
 def show_initial_menu():
     terminate = False

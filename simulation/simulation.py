@@ -6,7 +6,7 @@ import numpy as np
 import json
 
 import signal
-from multiprocessing import Value, Process
+from multiprocessing import Value, Process, Manager
 
 class Simulation:
     def __init__(self):
@@ -15,83 +15,71 @@ class Simulation:
         self.buf = 16384
         self.addr = (self.host, self.port)
         self.continue_run = Value('i',1)
-        self.bodies = []
-        self.clients = [self.serversocket]
-        
-
-    def run_handler(self, clientsocket, clientaddr):
-        print("Accepted connection from: ", clientaddr)
-    
-        while self.continue_run.value:
-            data = clientsocket.recv(1024)
-            print(data.decode('utf-8'))
-            if data.decode('utf-8') == "bye\n" or not data:
-                break
-            elif data.decode('utf-8') == "test1\n":
-                clientsocket.send("test1\n".encode())
-            else:
-                clientsocket.send(("ECHO: " + data.decode('utf-8') + '\n').encode())
-
-        self.clients.remove(clientsocket)
-        clientsocket.close()
-        print('Handler thread terminated')    
-
-    def run_pipe(self):
-        signal.signal(signal.SIGINT, self.signal_handler)  
-
-        try:
-            while self.continue_run.value: 
-                for i in self.clients:
-                    if i is not self.serversocket: # neposilat sam sobe            
-                        i.send(json.dumps(self.bodies).encode())
-                time.sleep(0.001)
-        except ConnectionResetError:
-            print("Connection ended on the otherside")
-            exit
-        print('Pipe thread terminated')        
-
-    def run_server(self):    
-        signal.signal(signal.SIGINT, self.signal_handler)  
-        
-        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.serversocket.bind(self.addr)
-        self.serversocket.listen(10)
-        while self.continue_run.value:
-            clientsocket, clientaddr = self.serversocket.accept()
-            self.clients.append(clientsocket)
-            Process(target= self.run_handler, args=(clientsocket, clientaddr)).start()
-        self.serversocket.close()  
-        print('Server thread terminated')          
-
-
-    def run(self):
-        # will run server
-        # will run push thread
-
-        signal.signal(signal.SIGINT, self.signal_handler)            
-        dt = 10
 
         sc = {"position":[1.5e11+6971000,0,0], "mass":1, "velocity":[0,30000+8500,0], "name": "sc"}
         earth = {"position":[1.5e11,0,0], "mass":6e24, "velocity":[0,30000,0], "name": "earth",}
         sun = {"position":[0,0,0], "mass":2e30, "velocity":[0,0,0], "name": "sun"}
         moon = {"position":[1.5e11+384399000,0,0], "mass":7.3e22, "velocity":[0,30000+1000,0], "name": "moon"}
 
-        self.bodies = [sun, earth, moon, sc]
-        print('Simulation initialized')
+        self.bodies_manager = Manager()
+        self.bodies = self.bodies_manager.list([sc, earth, sun, moon]) 
+
+        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clients = [self.serversocket]
+
+        self.processes = []
+
+    def run_pipe(self):
+        signal.signal(signal.SIGINT, self.signal_handler)  
+        try:
+            print('Pipe thread started')   
+            while self.continue_run.value: 
+                for i in self.clients:
+                    if i is not self.serversocket: # neposilat sam sobe            
+                        i.send(json.dumps(self.bodies).encode())
+                time.sleep(0.001)
+        except ConnectionResetError:
+            exit
+        print('Pipe thread terminated')        
+
+    def run_server(self):    
+        signal.signal(signal.SIGINT, self.signal_handler)  
         
+        print('Server thread started')   
+        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.serversocket.bind(self.addr)
+        self.serversocket.listen(10)
+        while self.continue_run.value:
+            clientsocket = self.serversocket.accept()
+            self.clients.append(clientsocket)
+        self.serversocket.close()  
+        print('Server thread terminated')          
+
+    def run_simulation(self):    
+        signal.signal(signal.SIGINT, self.signal_handler)            
+
+        dt = 10
+
+        print('Simulation initialized')
         while self.continue_run.value:
             self.compute_gravity_step(self.bodies, time_step = dt)    
             time.sleep(0.02)
-     
         print('Simulation thread terminated')    
+
+
+    def run(self):
+        self.processes.append(Process(target=self.run_simulation).start())
+        self.processes.append(Process(target=self.run_pipe).start())
+        self.processes.append(Process(target=self.run_server).start())
 
 
     def terminate(self):
         self.continue_run.value = 0
 
     def signal_handler(self, sig, frame):
-        self.continue_run.value = 0        
+        for process in self.processes:
+            if process and process.is_alive():
+                process.terminate()          
 
         
     def calculate_single_body_acceleration(self, bodies, body_index):
