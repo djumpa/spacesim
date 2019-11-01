@@ -14,7 +14,6 @@ class Groundstation:
         self.reply = Value(c_char_p, b"hello world")
         self.continue_run = Value('i',1)
         self.loop = asyncio.get_event_loop()  
-        self.processes = []
 
     def run_server(self):
         print("groundstation run server thread initialized")
@@ -34,19 +33,18 @@ class Groundstation:
         print("groundstation thread initialized")
         while self.continue_run.value:
             self.reply = clientsocket.recv(self.buf)
+            
         print("groundstation thread terminated")
 
     def run(self):    
-        self.processes.append(Process(target=self.run_server).start())
-        self.processes.append(Process(target=self.run_client_socket).start())
+        Process(target=self.run_server).start()
+        Process(target=self.run_client_socket).start()
 
     def terminate(self):
         self.continue_run.value = 0    
 
     def signal_handler(self, sig, frame):
-        for process in self.processes:
-            if process and process.is_alive():
-                process.terminate()    
+        self.continue_run.value = 0    
      
     async def send_data(self,websocket, path):
         name = await websocket.recv()

@@ -27,8 +27,6 @@ class Simulation:
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clients = [self.serversocket]
 
-        self.processes = []
-
     def run_pipe(self):
         signal.signal(signal.SIGINT, self.signal_handler)  
         try:
@@ -68,19 +66,16 @@ class Simulation:
 
 
     def run(self):
-        self.processes.append(Process(target=self.run_simulation).start())
-        self.processes.append(Process(target=self.run_pipe).start())
-        self.processes.append(Process(target=self.run_server).start())
+        Process(target=self.run_simulation).start()
+        Process(target=self.run_pipe).start()
+        Process(target=self.run_server).start()
 
 
     def terminate(self):
         self.continue_run.value = 0
 
     def signal_handler(self, sig, frame):
-        for process in self.processes:
-            if process and process.is_alive():
-                process.terminate()          
-
+        self.continue_run.value = 0          
         
     def calculate_single_body_acceleration(self, bodies, body_index):
         G_const = 6.67408e-11  #m3 kg-1 s-2
