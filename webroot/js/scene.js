@@ -54,8 +54,6 @@ function init()
     
     scene.add( sun );
 
-
-
     geometry = new THREE.SphereGeometry(6371000,32,32);
     planets.push(generatePlanet(365.25, [0, 0, Math.PI/180 * -23.5] , [1.5e11, 0, 0] , sun, geometry, 'phong', 'res/earthday.jpg'));
     scene.add(planets[planets.length - 1].mesh);
@@ -116,8 +114,6 @@ function generatePlanet(orbitingRate, rotationRate, distance, orbitingCenter, ge
     mesh.rotation.x = rotationRate[0];
     mesh.rotation.y = rotationRate[1];
     mesh.rotation.z = rotationRate[2];
-
-
 
     return {
         orbitingRate: orbitingRate,

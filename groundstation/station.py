@@ -1,51 +1,55 @@
-#!/usr/bin/env python3
-
 import socket
 import time
 import asyncio
 import websockets
-import threading
 
-host = 'localhost'
-port = 1234
-buf = 16384
-reply = ''
+import signal
+from multiprocessing import Value, Array
+from ctypes import c_char
 
-def sock_client():
-    clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientsocket.connect((host, port))
-
-    print("Sending 'test'")
-    clientsocket.send('test'.encode('utf-8'))
-    print("REPLY: " + clientsocket.recv(buf).decode('utf-8'))
-
-    while True:
-        try:
-            
-            global reply
-            reply = clientsocket.recv(buf).decode('utf-8')
-            #if reply:
-                #print("REPLY: " + reply)
-        except KeyboardInterrupt: # Ctrl+C # FIXME: vraci "raise error(EBADF, 'Bad file descriptor')"
-            print("Closing...")
-            break
-
-async def hello(websocket, path):
-    name = await websocket.recv()
-    print(f"< {name}")
-
-    global reply
-    while True:
-        await websocket.send(reply)
-        time.sleep(0.02)
+class Groundstation:
+    def __init__(self):
+        self.host = 'localhost'
+        self.port = 1234
+        self.buf = 16384
+        self.reply = Array(c_char, "")
+        self.continue_run = Value('i',1)
 
 
-x = threading.Thread(target=sock_client, args=())
-x.start()
+    def run(self):    
+        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        clientsocket.connect((self.host, self.port))    
+        clientsocket.send('test'.encode('utf-8'))
 
-start_server = websockets.serve(hello, "localhost", 8765)
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+        start_server = websockets.serve(self.hello, "localhost", 8765)
+        asyncio.get_event_loop().run_until_complete(start_server)
+        asyncio.get_event_loop().run_forever()
+
+        print("groundstation thread initialized")
+        def signal_handler(sig, frame):
+            self.continue_run.value = 0
+
+        while self.continue_run.value:
+            self.reply.value = clientsocket.recv(self.buf).decode('utf-8')            
+
+        signal.signal(signal.SIGINT, signal_handler)
+        print("groundstation thread terminated")
+
+
+    def terminate(self):
+        self.continue_run.value = 0    
+     
+
+
+    async def hello(self,websocket, path):
+        name = await websocket.recv()
+        print(f"< {name}")
+
+        while self.continue_run.value:
+            await websocket.send(self.reply.value)
+            time.sleep(0.02)
+
+
 
 
 
