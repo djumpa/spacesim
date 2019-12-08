@@ -12,3 +12,6 @@
 
 # Caches
 - (^|/)cache/
+
+# JS vendors
+- webroot/js/vendor/

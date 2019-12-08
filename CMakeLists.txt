@@ -5,5 +5,5 @@ project(spacesim)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # add the executable
-add_executable(fc fc/fc.c)
-add_executable(sim simulation/sim.c)
+add_executable(fc fc/fc.c lib/socketlib.c)
+add_executable(sim simulation/sim.c lib/socketlib.c)

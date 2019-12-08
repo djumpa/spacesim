@@ -1,49 +1,61 @@
 /* program to read UDPs */
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <termios.h>
 #include <unistd.h> // for close
-#define DEFAULT_PORT 12345
+
+#include "../lib/socketlib.h"
+
+#define PORT_RECEIVE 92000
+#define PORT_SEND 92001
 #define DEFAULT_GROUP "127.0.0.1"
+
 int main(int argc, char **argv)
 {
-    int Buffer[200];
-    int port = DEFAULT_PORT;
-    int retval;
-    int fromlen;
+    printf("Simulation program\n");
+    int s, s_send;
+    struct sockaddr_in s_addr, s_addr_send;
     int pktcount;
-    struct sockaddr_in s_addr;
-    int s;
-    int addr_len;
-    int permission = 1;
-    addr_len = sizeof(s_addr);
-    s_addr.sin_family = AF_INET;
-    s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    s_addr.sin_port = htons(DEFAULT_PORT);
-    s = socket(AF_INET, SOCK_DGRAM, 0); /* open the socket */
-    if (s < 0)
-    {
-        perror("socket");
-        return 1;
-    }
-    /* get permission to read broadcast packets */
-    if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &permission,
-                   sizeof(permission)) < 0)
-    {
-        perror("permission");
-        return 2;
-    }
-    /* bind the socket to its structure */
-    if (bind(s, (struct sockaddr *)&s_addr, sizeof(s_addr)) < 0)
-    {
-        perror("bind");
-        return 3;
-    }
-    printf("ready to read\n");
+    int addr_len = sizeof(s_addr);
+
+    int Buffer[2];
+    Vector3f buffer_float[2];
+    Vector3f pos = {0.0f, 0.0f, 0.0f};
+    Vector3f vel = {0.0f, 0.0f, 0.0f};
+    int retval;
+    init_socket_server(&s_send, &s_addr_send, PORT_SEND, DEFAULT_GROUP);
+    init_socket_client(&s, &s_addr, PORT_RECEIVE, DEFAULT_GROUP);
+
+    float dt = 0.01f;
+
     while (1)
     {
+        //send
+        retval = sendto(s_send, &buffer_float, sizeof(buffer_float), 0, /* send the packet */
+                        (struct sockaddr *)&s_addr_send, sizeof(s_addr_send));
+
+        if (retval < 0)
+        {
+            perror("send");
+            return 3;
+        }
+
+        if (pktcount >= 5000)
+        {
+            printf("S->FC\n");
+            fflush(stdout);
+        }
+
+        //Actual logic
+        vel.x = 1.0f;
+        vel.y = 1.1f;
+        vel.z = 0.9f;
+
+        pos.x = pos.x + vel.x * dt;
+        pos.y = pos.y + vel.y * dt;
+        pos.z = pos.z + vel.z * dt;
+
+        buffer_float[0] = pos;
+        buffer_float[1] = vel;
+
+
         retval = recvfrom(s, Buffer, sizeof(Buffer), 0, /* get a packet */
                           (struct sockaddr *)&s_addr, &addr_len);
         if (retval < 0)
@@ -51,13 +63,16 @@ int main(int argc, char **argv)
             perror("recvfrom");
             return 4;
         }
-        pktcount = pktcount + 1; /* log every 50th packet */
-        if (pktcount >= 500)
+
+        if (pktcount >= 5000)
         {
-            pktcount = 0;
-            printf(".");
+            printf("R0: %i\n", Buffer[0]);
+            printf("R1: %i\n", Buffer[1]);
             fflush(stdout);
         }
+        if (pktcount >= 5000)
+            pktcount = 0;
+        pktcount = pktcount + 1; /* log every 50th packet */
     }
     close(s); /* close the socket */
     return 0;

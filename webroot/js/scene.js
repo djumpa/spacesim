@@ -1,6 +1,6 @@
-import {GLTFLoader} from './GLTFLoader.js';
-import {OrbitControls} from './OrbitControls.js'
-import { NoBlending } from './three.module.js';
+import {GLTFLoader} from './vendor/GLTFLoader.js';
+import {OrbitControls} from './vendor/OrbitControls.js'
+import { NoBlending } from './vendor/three.module.js';
 
 var camera, scene, renderer;
 var planets = [];
